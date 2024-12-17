@@ -7,9 +7,51 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(urdf REQUIRED)
+find_package(kdl_parser REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(tachimawari_interfaces REQUIRED)
+find_package(kansei_interfaces REQUIRED)
+
+add_library(${PROJECT_NAME} SHARED
+  "src/${PROJECT_NAME}/node/robot_frames_node.cpp"
+  "src/${PROJECT_NAME}/model/robot_wrapper.cpp"
+)
+
+target_include_directories(${PROJECT_NAME} PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+
+ament_target_dependencies(${PROJECT_NAME}
+  rclcpp
+  tf2_ros
+  urdf
+  kdl_parser
+  geometry_msgs
+  tachimawari_interfaces
+  kansei_interfaces)
+
+install(DIRECTORY "include" DESTINATION ".")
+
+install(TARGETS ${PROJECT_NAME}
+  EXPORT export_${PROJECT_NAME}
+  ARCHIVE DESTINATION "lib"
+  LIBRARY DESTINATION "lib"
+  RUNTIME DESTINATION "bin")
+
+add_executable(main "src/main.cpp")
+target_include_directories(main PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+target_link_libraries(main ${PROJECT_NAME})
+
+install(TARGETS
+  main
+  DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -23,4 +65,15 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
+ament_export_dependencies(
+  rclcpp
+  tf2_ros
+  urdf
+  kdl_parser
+  geometry_msgs
+  tachimawari_interfaces
+  kansei_interfaces
+)
+ament_export_include_directories(include)
+ament_export_libraries(${PROJECT_NAME})
 ament_package()
