@@ -1,5 +1,7 @@
 #include "robot_frames/node/robot_frames_node.hpp"
 
+using namespace std::chrono_literals;
+
 namespace robot_frames
 {
 
@@ -13,80 +15,61 @@ RobotFramesNode::RobotFramesNode(
   static_tf_broadcaster = std::make_shared<tf2_ros::StaticTransformBroadcaster>(node);
 
   current_joints_subscriber = node->create_subscription<CurrentJoints>(
-    "joint/current_joints", 10,
-    std::bind(&RobotFramesNode::update_joints, this, std::placeholders::_1));
+    "joint/current_joints", 10, [this](const CurrentJoints::SharedPtr msg) {
+      for (const auto & joint : msg->joints) {
+        this->robot_wrapper->update_joint_position(
+          this->robot_wrapper->joint_names.at(joint.id), joint.position);
+      }
+    });
+
+  kansei_status_subscriber = node->create_subscription<KanseiStatus>(
+    "measurement/status", 10, [this](const KanseiStatus::SharedPtr msg) {
+      this->robot_wrapper->update_orientation(
+        msg->orientation.roll, msg->orientation.pitch, msg->orientation.yaw);
+    });
 
   publish_static_frames();
+
+  node_timer = node->create_wall_timer(8ms, [this]() { publish_frames(); });
 }
 
-void RobotFramesNode::update_joints(const CurrentJoints::SharedPtr msg)
+void RobotFramesNode::publish_frames()
 {
-  std::map<std::string, double> joint_positions;
-  for (const auto & joint : msg->joints) {
-    const std::string & joint_name = robot_wrapper->joint_names.at(joint.id);
+  auto time = node->now();
+  auto joints = robot_wrapper->get_joints();
 
-    joint_positions.insert({joint_name, joint.position});
-  }
-
-  auto links = robot_wrapper->get_links();
-  for (const auto & link : links) {
-    const std::string & link_name = link.first;
-
-    if (joint_positions.find(link_name) == joint_positions.end()) {
-      joint_positions.insert({link_name, 0.0});
-    }
-  }
-
-  auto mimics = robot_wrapper->get_mimics();
-
-  for (const auto & mimic : mimics) {
-    if (joint_positions.find(mimic.second.joint_name) != joint_positions.end()) {
-      double position =
-        joint_positions.at(mimic.second.joint_name) * mimic.second.multiplier + mimic.second.offset;
-
-      joint_positions.insert({mimic.first, position});
-    }
-  }
-
-  rclcpp::Time current_time = node->now();
-  publish_frames(joint_positions, current_time);
-}
-
-void RobotFramesNode::publish_frames(
-  const std::map<std::string, double> & joint_positions, const rclcpp::Time & time)
-{
   std::vector<TransformStamped> tf_transforms;
-  auto robot_links = robot_wrapper->get_links();
 
-  RCLCPP_INFO(node->get_logger(), "Publishing frames");
-
-  for (const auto & joint : joint_positions) {
+  for (const auto & joint : joints) {
     const std::string & joint_name = joint.first;
-    const double & position = joint.second;
+    const auto & joint_data = joint.second;
 
-    auto link = robot_links.find(joint_name);
+    TransformStamped tf_transform;
 
-    if (link != robot_links.end()) {
-      KDL::Frame frame(link->second.segment.pose(position));
+    tf_transform.header.stamp = time;
+    tf_transform.header.frame_id = joint_data.parent;
+    tf_transform.child_frame_id = joint_data.child;
 
-      TransformStamped tf_transform;
+    auto frame = joint_data.segment.pose(joint_data.position);
 
-      tf_transform.header.stamp = time;
-      tf_transform.header.frame_id = link->second.parent;
-      tf_transform.child_frame_id = link->second.child;
+    tf_transform.transform.translation.x = frame.p.x();
+    tf_transform.transform.translation.y = frame.p.y();
+    tf_transform.transform.translation.z = frame.p.z();
 
-      tf_transform.transform.translation.x = frame.p.x();
-      tf_transform.transform.translation.y = frame.p.y();
-      tf_transform.transform.translation.z = frame.p.z();
+    if (joint_name == "body_joint") {
+      auto orientation = robot_wrapper->get_orientation();
 
+      tf_transform.transform.rotation.x = orientation.x;
+      tf_transform.transform.rotation.y = orientation.y;
+      tf_transform.transform.rotation.z = orientation.z;
+      tf_transform.transform.rotation.w = orientation.w;
+    } else {
       frame.M.GetQuaternion(
         tf_transform.transform.rotation.x, tf_transform.transform.rotation.y,
         tf_transform.transform.rotation.z, tf_transform.transform.rotation.w);
-
-      tf_transforms.push_back(tf_transform);
-    } else {
-      RCLCPP_WARN(node->get_logger(), "Joint %s not found in URDF", joint_name.c_str());
     }
+
+    tf_transforms.push_back(tf_transform);
   }
 
   tf_broadcaster->sendTransform(tf_transforms);
@@ -94,12 +77,12 @@ void RobotFramesNode::publish_frames(
 
 void RobotFramesNode::publish_static_frames()
 {
-  auto robot_links = robot_wrapper->get_fixed_links();
+  auto robot_joints = robot_wrapper->get_fixed_joints();
   std::vector<TransformStamped> tf_transforms;
 
   RCLCPP_INFO(node->get_logger(), "Publishing static frames");
 
-  for (const auto & link : robot_links) {
+  for (const auto & link : robot_joints) {
     KDL::Frame frame(link.second.segment.pose(0.0));
 
     TransformStamped tf_transform;

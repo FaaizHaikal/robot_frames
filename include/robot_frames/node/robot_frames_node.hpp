@@ -24,9 +24,7 @@ public:
 
   RobotFramesNode(const rclcpp::Node::SharedPtr & node, const std::string & urdf_path);
 
-  void publish_frames(
-    const std::map<std::string, double> & joint_positions, const rclcpp::Time & time);
-  void update_joints(const CurrentJoints::SharedPtr msg);
+  void publish_frames();
   void publish_static_frames();
 
 private:

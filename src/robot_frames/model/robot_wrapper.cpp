@@ -6,7 +6,11 @@
 namespace robot_frames
 {
 
-RobotWrapper::RobotWrapper(const std::string & urdf_path) { load_urdf(urdf_path); }
+RobotWrapper::RobotWrapper(const std::string & urdf_path)
+{
+  load_urdf(urdf_path);
+  update_orientation(0.0, 0.0, 0.0);
+}
 
 void RobotWrapper::load_urdf(const std::string & urdf_path)
 {
@@ -32,24 +36,12 @@ void RobotWrapper::load_urdf(const std::string & urdf_path)
     throw std::invalid_argument("Failed to extract kdl tree from urdf model");
   }
 
-  mimics.clear();
-  for (const auto & joint : model.joints_) {
-    auto joint_mimic = urdf::JointMimic();
-    if (joint.second->mimic) {
-      joint_mimic.joint_name = joint.second->mimic->joint_name;
-      joint_mimic.multiplier = joint.second->mimic->multiplier;
-      joint_mimic.offset = joint.second->mimic->offset;
-
-      mimics.insert({joint.first, joint_mimic});
-    }
-  }
-
-  links.clear();
-  fixed_links.clear();
-  add_link(model, tree.getRootSegment());
+  joints.clear();
+  fixed_joints.clear();
+  add_joint(model, tree.getRootSegment());
 }
 
-void RobotWrapper::add_link(
+void RobotWrapper::add_joint(
   const urdf::Model & model, const KDL::SegmentMap::const_iterator segment)
 {
   const std::string & root_name = segment->second.segment.getName();
@@ -63,20 +55,46 @@ void RobotWrapper::add_link(
 
     const std::string & joint_name = children[i]->second.segment.getJoint().getName();
 
-    SegmentPair pair(child, root_name, child_name);
+    Joint joint(child, root_name, child_name);
 
     if (child.getJoint().getType() == KDL::Joint::None) {
       printf("Fixed link: %s -> %s\n", root_name.c_str(), child_name.c_str());
-      fixed_links.insert({joint_name, pair});
+      fixed_joints.insert({joint_name, joint});
     } else {
       printf("Link: %s -> %s\n", root_name.c_str(), child_name.c_str());
-      links.insert({joint_name, pair});
+      joints.insert({joint_name, joint});
     }
 
-    // links.insert({joint_name, pair});
-
-    add_link(model, children[i]);
+    add_joint(model, children[i]);
   }
+}
+
+void RobotWrapper::update_joint_position(const std::string & joint_name, const double & position)
+{
+  auto joint = joints.find(joint_name);
+
+  if (joint != joints.end()) {
+    joint->second.position = angle_to_rad(position);
+  }
+}
+
+void RobotWrapper::update_orientation(const double & roll, const double & pitch, const double & yaw)
+{
+  KDL::Rotation rotation =
+    KDL::Rotation::RPY(angle_to_rad(roll), angle_to_rad(pitch), angle_to_rad(yaw));
+
+  double x, y, z, w;
+  rotation.GetQuaternion(x, y, z, w);
+
+  orientation.x = x;
+  orientation.y = y;
+  orientation.z = z;
+  orientation.w = w;
+}
+
+double RobotWrapper::angle_to_rad(const double & angle)
+{
+  return angle * 3.14159265358979323846 / 180.0;
 }
 
 }  // namespace robot_frames

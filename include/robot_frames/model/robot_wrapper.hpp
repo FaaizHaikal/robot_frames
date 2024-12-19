@@ -9,25 +9,33 @@
 
 namespace robot_frames
 {
-
-class SegmentPair
-{
-public:
-  SegmentPair(const KDL::Segment & segment, const std::string & parent, const std::string & child)
-  : segment(segment), parent(parent), child(child)
-  {
-  }
-
-  KDL::Segment segment;
-  std::string parent;
-  std::string child;
-};
-
 class RobotWrapper
 {
 public:
-  using MimicMap = std::map<std::string, urdf::JointMimic>;
-  using LinkMap = std::map<std::string, SegmentPair>;
+  struct Joint
+  {
+    KDL::Segment segment;
+    std::string parent;
+    std::string child;
+    double position;
+
+    Joint(
+      const KDL::Segment & segment, const std::string & parent, const std::string & child,
+      const double & position = 0)
+    : segment(segment), parent(parent), child(child), position(position)
+    {
+    }
+  };
+
+  struct Orientation
+  {
+    double x;
+    double y;
+    double z;
+    double w;
+  };
+
+  using JointMap = std::map<std::string, Joint>;
 
   const std::map<u_int8_t, std::string> joint_names = {
     {1, "right_shoulder_pitch"},
@@ -55,16 +63,19 @@ public:
   RobotWrapper(const std::string & urdf_path);
 
   void load_urdf(const std::string & urdf_path);
-  void add_link(const urdf::Model & model, const KDL::SegmentMap::const_iterator segment);
+  void add_joint(const urdf::Model & model, const KDL::SegmentMap::const_iterator segment);
+  void update_joint_position(const std::string & name, const double & position);
+  void update_orientation(const double & roll, const double & pitch, const double & yaw);
+  double angle_to_rad(const double & angle);
 
-  const MimicMap & get_mimics() const { return mimics; }
-  const LinkMap & get_links() const { return links; }
-  const LinkMap & get_fixed_links() const { return fixed_links; }
+  const JointMap & get_joints() const { return joints; }
+  const JointMap & get_fixed_joints() const { return fixed_joints; }
+  const Orientation & get_orientation() const { return orientation; }
 
 private:
-  LinkMap links;
-  LinkMap fixed_links;
-  MimicMap mimics;
+  JointMap joints;
+  JointMap fixed_joints;
+  Orientation orientation;
 };
 
 }  // namespace robot_frames
