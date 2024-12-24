@@ -14,6 +14,7 @@ find_package(kdl_parser REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tachimawari_interfaces REQUIRED)
 find_package(kansei_interfaces REQUIRED)
+find_package(keisan REQUIRED)
 
 add_library(${PROJECT_NAME} SHARED
   "src/${PROJECT_NAME}/node/robot_frames_node.cpp"
@@ -32,7 +33,8 @@ ament_target_dependencies(${PROJECT_NAME}
   kdl_parser
   geometry_msgs
   tachimawari_interfaces
-  kansei_interfaces)
+  kansei_interfaces
+  keisan)
 
 install(DIRECTORY "include" DESTINATION ".")
 
@@ -73,6 +75,7 @@ ament_export_dependencies(
   geometry_msgs
   tachimawari_interfaces
   kansei_interfaces
+  keisan
 )
 ament_export_include_directories(include)
 ament_export_libraries(${PROJECT_NAME})

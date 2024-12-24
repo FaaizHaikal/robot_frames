@@ -18,14 +18,17 @@ RobotFramesNode::RobotFramesNode(
     "joint/current_joints", 10, [this](const CurrentJoints::SharedPtr msg) {
       for (const auto & joint : msg->joints) {
         this->robot_wrapper->update_joint_position(
-          this->robot_wrapper->joint_names.at(joint.id), joint.position);
+          this->robot_wrapper->joint_names.at(joint.id), keisan::make_degree(joint.position));
       }
     });
 
   kansei_status_subscriber = node->create_subscription<KanseiStatus>(
     "measurement/status", 10, [this](const KanseiStatus::SharedPtr msg) {
-      this->robot_wrapper->update_orientation(
-        msg->orientation.roll, msg->orientation.pitch, msg->orientation.yaw);
+      auto roll = keisan::make_degree(msg->orientation.roll);
+      auto pitch = keisan::make_degree(msg->orientation.pitch);
+      auto yaw = keisan::make_degree(msg->orientation.yaw);
+
+      this->robot_wrapper->update_orientation(roll, pitch, yaw);
     });
 
   publish_static_frames();

@@ -7,6 +7,10 @@
 #include <kdl_parser/kdl_parser.hpp>
 #include <map>
 
+#include "keisan/angle.hpp"
+
+using namespace keisan::literals;
+
 namespace robot_frames
 {
 class RobotWrapper
@@ -64,9 +68,9 @@ public:
 
   void load_urdf(const std::string & urdf_path);
   void add_joint(const urdf::Model & model, const KDL::SegmentMap::const_iterator segment);
-  void update_joint_position(const std::string & name, const double & position);
-  void update_orientation(const double & roll, const double & pitch, const double & yaw);
-  double angle_to_rad(const double & angle);
+  void update_joint_position(const std::string & name, keisan::Angle<double> position);
+  void update_orientation(
+    keisan::Angle<double> roll, keisan::Angle<double> pitch, keisan::Angle<double> yaw);
 
   const JointMap & get_joints() const { return joints; }
   const JointMap & get_fixed_joints() const { return fixed_joints; }
@@ -76,6 +80,8 @@ private:
   JointMap joints;
   JointMap fixed_joints;
   Orientation orientation;
+
+  keisan::Angle<double> hip_pitch_offset;
 };
 
 }  // namespace robot_frames

@@ -3,13 +3,18 @@
 #include <fstream>
 #include <iostream>
 
+using namespace keisan::literals;
+
 namespace robot_frames
 {
 
 RobotWrapper::RobotWrapper(const std::string & urdf_path)
 {
   load_urdf(urdf_path);
-  update_orientation(0.0, 0.0, 0.0);
+
+  hip_pitch_offset = 30.0_deg;  // TODO: Get from config
+
+  update_orientation(0.0_deg, 0.0_deg, 0.0_deg);
 }
 
 void RobotWrapper::load_urdf(const std::string & urdf_path)
@@ -69,19 +74,28 @@ void RobotWrapper::add_joint(
   }
 }
 
-void RobotWrapper::update_joint_position(const std::string & joint_name, const double & position)
+void RobotWrapper::update_joint_position(
+  const std::string & joint_name, keisan::Angle<double> position)
 {
   auto joint = joints.find(joint_name);
 
   if (joint != joints.end()) {
-    joint->second.position = angle_to_rad(position);
+    if (joint_name == "right_hip_pitch") {
+      position -= hip_pitch_offset;
+    } else if (joint_name == "left_hip_pitch") {
+      position += hip_pitch_offset;
+    }
+
+    joint->second.position = position.radian();
   }
 }
 
-void RobotWrapper::update_orientation(const double & roll, const double & pitch, const double & yaw)
+void RobotWrapper::update_orientation(
+  keisan::Angle<double> roll, keisan::Angle<double> pitch, keisan::Angle<double> yaw)
 {
-  KDL::Rotation rotation =
-    KDL::Rotation::RPY(angle_to_rad(roll), angle_to_rad(pitch), angle_to_rad(yaw));
+  pitch += hip_pitch_offset;
+
+  KDL::Rotation rotation = KDL::Rotation::RPY(roll.radian(), pitch.radian(), yaw.radian());
 
   double x, y, z, w;
   rotation.GetQuaternion(x, y, z, w);
@@ -90,11 +104,6 @@ void RobotWrapper::update_orientation(const double & roll, const double & pitch,
   orientation.y = y;
   orientation.z = z;
   orientation.w = w;
-}
-
-double RobotWrapper::angle_to_rad(const double & angle)
-{
-  return angle * 3.14159265358979323846 / 180.0;
 }
 
 }  // namespace robot_frames
