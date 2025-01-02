@@ -64,9 +64,11 @@ public:
     {20, "neck_pitch"},
   };
 
-  RobotWrapper(const std::string & urdf_path);
+  RobotWrapper(const std::string & urdf_path, const std::string & walk_posture_path);
 
   void load_urdf(const std::string & urdf_path);
+  void load_walk_posture(const std::string & walk_posture_path);
+
   void add_joint(const urdf::Model & model, const KDL::SegmentMap::const_iterator segment);
   void update_joint_position(const std::string & name, keisan::Angle<double> position);
   void update_orientation(
@@ -82,6 +84,12 @@ private:
   Orientation orientation;
 
   keisan::Angle<double> hip_pitch_offset;
+  keisan::Angle<double> ankle_pitch_offset;
+  keisan::Angle<double> ankle_roll_offset;
+  keisan::Angle<double> ankle_yaw_offset;
+  keisan::Angle<double> x_offset;
+  keisan::Angle<double> y_offset;
+  keisan::Angle<double> z_offset;
 };
 
 }  // namespace robot_frames

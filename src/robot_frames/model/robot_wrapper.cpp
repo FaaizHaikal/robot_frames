@@ -2,17 +2,19 @@
 
 #include <fstream>
 #include <iostream>
+#include <nlohmann/json.hpp>
+
+#include "jitsuyo/config.hpp"
 
 using namespace keisan::literals;
 
 namespace robot_frames
 {
 
-RobotWrapper::RobotWrapper(const std::string & urdf_path)
+RobotWrapper::RobotWrapper(const std::string & urdf_path, const std::string & walk_posture_path)
 {
   load_urdf(urdf_path);
-
-  hip_pitch_offset = 30.0_deg;  // TODO: Get from config
+  load_walk_posture(walk_posture_path);
 
   update_orientation(0.0_deg, 0.0_deg, 0.0_deg);
 }
@@ -44,6 +46,61 @@ void RobotWrapper::load_urdf(const std::string & urdf_path)
   joints.clear();
   fixed_joints.clear();
   add_joint(model, tree.getRootSegment());
+}
+
+void RobotWrapper::load_walk_posture(const std::string & walk_posture_path)
+{
+  nlohmann::json config;
+
+  if (!jitsuyo::load_config(walk_posture_path, "kinematic.json", config)) {
+    throw std::runtime_error("Failed to load config file `walk_posture.json`");
+  }
+
+  bool valid_config = true;
+
+  nlohmann::json offset_section;
+  if (jitsuyo::assign_val(config, "offset", offset_section)) {
+    bool valid_section = true;
+
+    double hip_pitch_offset_double;
+    double ankle_pitch_offset_double;
+    double ankle_roll_offset_double;
+    double ankle_yaw_offset_double;
+    double x_offset_double;
+    double y_offset_double;
+    double z_offset_double;
+
+    valid_section &=
+      jitsuyo::assign_val(offset_section, "hip_pitch_offset", hip_pitch_offset_double);
+    valid_section &=
+      jitsuyo::assign_val(offset_section, "ankle_pitch_offset", ankle_pitch_offset_double);
+    valid_section &=
+      jitsuyo::assign_val(offset_section, "ankle_roll_offset", ankle_roll_offset_double);
+    valid_section &=
+      jitsuyo::assign_val(offset_section, "ankle_yaw_offset", ankle_yaw_offset_double);
+    valid_section &= jitsuyo::assign_val(offset_section, "x_offset", x_offset_double);
+    valid_section &= jitsuyo::assign_val(offset_section, "y_offset", y_offset_double);
+    valid_section &= jitsuyo::assign_val(offset_section, "z_offset", z_offset_double);
+
+    hip_pitch_offset = keisan::make_degree(hip_pitch_offset_double);
+    ankle_pitch_offset = keisan::make_degree(ankle_pitch_offset_double);
+    ankle_roll_offset = keisan::make_degree(ankle_roll_offset_double);
+    ankle_yaw_offset = keisan::make_degree(ankle_yaw_offset_double);
+    x_offset = keisan::make_degree(x_offset_double);
+    y_offset = keisan::make_degree(y_offset_double);
+    z_offset = keisan::make_degree(z_offset_double);
+
+    if (!valid_section) {
+      std::cerr << "Error found at section `soccer`" << std::endl;
+      valid_config = false;
+    }
+  } else {
+    valid_config = false;
+  }
+
+  if (!valid_config) {
+    throw std::runtime_error("Failed to load config file `kinematic.json`");
+  }
 }
 
 void RobotWrapper::add_joint(

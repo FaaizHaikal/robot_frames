@@ -6,10 +6,11 @@ namespace robot_frames
 {
 
 RobotFramesNode::RobotFramesNode(
-  const rclcpp::Node::SharedPtr & node, const std::string & urdf_path)
+  const rclcpp::Node::SharedPtr & node, const std::string & urdf_path,
+  const std::string & walk_posture_path)
 : node(node)
 {
-  robot_wrapper = std::make_shared<RobotWrapper>(urdf_path);
+  robot_wrapper = std::make_shared<RobotWrapper>(urdf_path, walk_posture_path);
 
   tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(node);
   static_tf_broadcaster = std::make_shared<tf2_ros::StaticTransformBroadcaster>(node);

@@ -22,7 +22,9 @@ public:
   using KanseiStatus = kansei_interfaces::msg::Status;
   using TransformStamped = geometry_msgs::msg::TransformStamped;
 
-  RobotFramesNode(const rclcpp::Node::SharedPtr & node, const std::string & urdf_path);
+  RobotFramesNode(
+    const rclcpp::Node::SharedPtr & node, const std::string & urdf_path,
+    const std::string & walk_posture_path);
 
   void publish_frames();
   void publish_static_frames();
