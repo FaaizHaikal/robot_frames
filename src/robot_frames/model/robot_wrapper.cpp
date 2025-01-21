@@ -43,6 +43,17 @@ void RobotWrapper::load_urdf(const std::string & urdf_path)
     throw std::invalid_argument("Failed to extract kdl tree from urdf model");
   }
 
+  for (const auto & joint : model.joints_) {
+    if (joint.second->mimic) {
+      const auto & mimic = joint.second->mimic;
+      mimic_joints.insert({mimic->joint_name, MimicJoint(joint.first, mimic->multiplier)});
+
+      printf(
+        "Joint %s is mimicking %s with multiplier %f\n", joint.first.c_str(),
+        mimic->joint_name.c_str(), mimic->multiplier);
+    }
+  }
+
   joints.clear();
   fixed_joints.clear();
   add_joint(model, tree.getRootSegment());
@@ -72,12 +83,9 @@ void RobotWrapper::load_walk_posture(const std::string & walk_posture_path)
 
     valid_section &=
       jitsuyo::assign_val(offset_section, "hip_pitch_offset", hip_pitch_offset_double);
-    valid_section &=
-      jitsuyo::assign_val(offset_section, "pitch_offset", ankle_pitch_offset_double);
-    valid_section &=
-      jitsuyo::assign_val(offset_section, "roll_offset", ankle_roll_offset_double);
-    valid_section &=
-      jitsuyo::assign_val(offset_section, "yaw_offset", ankle_yaw_offset_double);
+    valid_section &= jitsuyo::assign_val(offset_section, "pitch_offset", ankle_pitch_offset_double);
+    valid_section &= jitsuyo::assign_val(offset_section, "roll_offset", ankle_roll_offset_double);
+    valid_section &= jitsuyo::assign_val(offset_section, "yaw_offset", ankle_yaw_offset_double);
     valid_section &= jitsuyo::assign_val(offset_section, "x_offset", x_offset_double);
     valid_section &= jitsuyo::assign_val(offset_section, "y_offset", y_offset_double);
     valid_section &= jitsuyo::assign_val(offset_section, "z_offset", z_offset_double);
@@ -120,10 +128,11 @@ void RobotWrapper::add_joint(
     Joint joint(child, root_name, child_name);
 
     if (child.getJoint().getType() == KDL::Joint::None) {
-      printf("Fixed link: %s -> %s\n", root_name.c_str(), child_name.c_str());
+      printf(
+        "Fixed joint %s:  %s -> %s\n", joint_name.c_str(), root_name.c_str(), child_name.c_str());
       fixed_joints.insert({joint_name, joint});
     } else {
-      printf("Link: %s -> %s\n", root_name.c_str(), child_name.c_str());
+      printf("Joint %s: %s -> %s\n", joint_name.c_str(), root_name.c_str(), child_name.c_str());
       joints.insert({joint_name, joint});
     }
 
@@ -135,10 +144,17 @@ void RobotWrapper::update_joint_position(
   const std::string & joint_name, keisan::Angle<double> position)
 {
   auto joint = joints.find(joint_name);
+  auto mimic_joint = mimic_joints.find(joint_name);
 
   if (joint != joints.end()) {
-
     joint->second.position = position.radian();
+
+    if (mimic_joint != mimic_joints.end()) {
+      auto joint = joints.find(mimic_joint->second.joint_name);
+      if (joint != joints.end()) {
+        joint->second.position = position.radian() * mimic_joint->second.multiplier;
+      }
+    }
   }
 }
 

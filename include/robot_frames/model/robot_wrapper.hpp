@@ -31,6 +31,19 @@ public:
     }
   };
 
+  struct MimicJoint
+  {
+    const std::string & joint_name;
+    const double & multiplier;
+    const double & offset;
+
+    MimicJoint(
+      const std::string & joint_name, const double & multiplier, const double & offset = 0.0)
+    : joint_name(joint_name), multiplier(multiplier), offset(offset)
+    {
+    }
+  };
+
   struct Orientation
   {
     double x;
@@ -40,6 +53,7 @@ public:
   };
 
   using JointMap = std::map<std::string, Joint>;
+  using MimicJointMap = std::map<std::string, MimicJoint>;
 
   const std::map<u_int8_t, std::string> joint_names = {
     {1, "right_shoulder_pitch"},
@@ -81,6 +95,7 @@ public:
 private:
   JointMap joints;
   JointMap fixed_joints;
+  MimicJointMap mimic_joints;
   Orientation orientation;
 
   keisan::Angle<double> hip_pitch_offset;
