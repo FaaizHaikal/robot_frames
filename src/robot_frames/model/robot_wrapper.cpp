@@ -73,11 +73,11 @@ void RobotWrapper::load_walk_posture(const std::string & walk_posture_path)
     valid_section &=
       jitsuyo::assign_val(offset_section, "hip_pitch_offset", hip_pitch_offset_double);
     valid_section &=
-      jitsuyo::assign_val(offset_section, "ankle_pitch_offset", ankle_pitch_offset_double);
+      jitsuyo::assign_val(offset_section, "pitch_offset", ankle_pitch_offset_double);
     valid_section &=
-      jitsuyo::assign_val(offset_section, "ankle_roll_offset", ankle_roll_offset_double);
+      jitsuyo::assign_val(offset_section, "roll_offset", ankle_roll_offset_double);
     valid_section &=
-      jitsuyo::assign_val(offset_section, "ankle_yaw_offset", ankle_yaw_offset_double);
+      jitsuyo::assign_val(offset_section, "yaw_offset", ankle_yaw_offset_double);
     valid_section &= jitsuyo::assign_val(offset_section, "x_offset", x_offset_double);
     valid_section &= jitsuyo::assign_val(offset_section, "y_offset", y_offset_double);
     valid_section &= jitsuyo::assign_val(offset_section, "z_offset", z_offset_double);
@@ -91,7 +91,7 @@ void RobotWrapper::load_walk_posture(const std::string & walk_posture_path)
     z_offset = keisan::make_degree(z_offset_double);
 
     if (!valid_section) {
-      std::cerr << "Error found at section `soccer`" << std::endl;
+      std::cerr << "Error found at section `offset`" << std::endl;
       valid_config = false;
     }
   } else {
@@ -137,11 +137,6 @@ void RobotWrapper::update_joint_position(
   auto joint = joints.find(joint_name);
 
   if (joint != joints.end()) {
-    if (joint_name == "right_hip_pitch") {
-      position -= hip_pitch_offset;
-    } else if (joint_name == "left_hip_pitch") {
-      position += hip_pitch_offset;
-    }
 
     joint->second.position = position.radian();
   }
