@@ -7,7 +7,7 @@
 #include <kdl_parser/kdl_parser.hpp>
 #include <map>
 
-#include "keisan/angle.hpp"
+#include "keisan/keisan.hpp"
 
 using namespace keisan::literals;
 
@@ -52,6 +52,14 @@ public:
     double w;
   };
 
+  struct CameraOffset
+  {
+    keisan::Point3 position;
+    keisan::Angle<double> roll;
+    keisan::Angle<double> pitch;
+    keisan::Angle<double> yaw;
+  };
+
   using JointMap = std::map<std::string, Joint>;
   using MimicJointMap = std::map<std::string, MimicJoint>;
 
@@ -78,10 +86,16 @@ public:
     {20, "neck_pitch"},
   };
 
-  RobotWrapper(const std::string & urdf_path, const std::string & walk_posture_path);
+  RobotWrapper(
+    const std::string & urdf_path, const std::string & camera_offset_path,
+    const std::string & walk_posture_path);
 
   void load_urdf(const std::string & urdf_path);
+  void load_camera_offset(const std::string & camera_offset_path);
   void load_walk_posture(const std::string & walk_posture_path);
+
+  void set_camera_offset(double x, double y, double z, double roll, double pitch, double yaw);
+  void save_camera_offset();
 
   void add_joint(const urdf::Model & model, const KDL::SegmentMap::const_iterator segment);
   void update_joint_position(const std::string & name, keisan::Angle<double> position);
@@ -91,12 +105,16 @@ public:
   const JointMap & get_joints() const { return joints; }
   const JointMap & get_fixed_joints() const { return fixed_joints; }
   const Orientation & get_orientation() const { return orientation; }
+  const CameraOffset & get_camera_offset() const { return camera_offset; }
 
 private:
   JointMap joints;
   JointMap fixed_joints;
   MimicJointMap mimic_joints;
   Orientation orientation;
+  CameraOffset camera_offset;
+
+  std::string camera_offset_path;
 
   keisan::Angle<double> hip_pitch_offset;
   keisan::Angle<double> ankle_pitch_offset;
