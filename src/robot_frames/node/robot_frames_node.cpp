@@ -7,10 +7,10 @@ namespace robot_frames
 
 RobotFramesNode::RobotFramesNode(
   const rclcpp::Node::SharedPtr & node, const std::string & urdf_path,
-  const std::string & camera_offset_path, const std::string & walk_posture_path)
+  const std::string & walk_posture_path)
 : node(node)
 {
-  robot_wrapper = std::make_shared<RobotWrapper>(urdf_path, camera_offset_path, walk_posture_path);
+  robot_wrapper = std::make_shared<RobotWrapper>(urdf_path, walk_posture_path);
 
   tf_broadcaster = std::make_shared<tf2_ros::TransformBroadcaster>(node);
   static_tf_broadcaster = std::make_shared<tf2_ros::StaticTransformBroadcaster>(node);
@@ -32,37 +32,6 @@ RobotFramesNode::RobotFramesNode(
       this->robot_wrapper->update_orientation(roll, pitch, yaw);
     });
 
-  get_camera_offset_service = node->create_service<GetCameraOffset>(
-    "camera/get_camera_offset", [this](
-                                  const GetCameraOffset::Request::SharedPtr request,
-                                  GetCameraOffset::Response::SharedPtr response) {
-      auto camera_offset = this->robot_wrapper->get_camera_offset();
-      response->position_x = camera_offset.position.x;
-      response->position_y = camera_offset.position.y;
-      response->position_z = camera_offset.position.z;
-
-      response->roll = camera_offset.roll.degree();
-      response->pitch = camera_offset.pitch.degree();
-      response->yaw = camera_offset.yaw.degree();
-
-      response->ok = true;
-    });
-
-  update_camera_offset_service = node->create_service<UpdateCameraOffset>(
-    "camera/update_camera_offset", [this](
-                                     const UpdateCameraOffset::Request::SharedPtr request,
-                                     UpdateCameraOffset::Response::SharedPtr response) {
-      this->robot_wrapper->set_camera_offset(
-        request->position_x, request->position_y, request->position_z, request->roll,
-        request->pitch, request->yaw);
-
-      if (request->save) {
-        this->robot_wrapper->save_camera_offset();
-      }
-
-      response->ok = true;
-    });
-
   publish_static_frames();
 
   node_timer = node->create_wall_timer(8ms, [this]() { publish_frames(); });
@@ -72,7 +41,6 @@ void RobotFramesNode::publish_frames()
 {
   auto time = node->now();
   auto joints = robot_wrapper->get_joints();
-  auto camera_offset = robot_wrapper->get_camera_offset();
 
   std::vector<TransformStamped> tf_transforms;
 
@@ -99,25 +67,6 @@ void RobotFramesNode::publish_frames()
       tf_transform.transform.rotation.y = orientation.y;
       tf_transform.transform.rotation.z = orientation.z;
       tf_transform.transform.rotation.w = orientation.w;
-    } else if (joint_name == "camera_joint") {
-      // Apply camera offset
-      tf_transform.transform.translation.x += camera_offset.position.x;
-      tf_transform.transform.translation.y += camera_offset.position.y;
-      tf_transform.transform.translation.z += camera_offset.position.z;
-
-      tf2::Quaternion q_orig, q_offset, q_result;
-      double roll, pitch, yaw;
-      frame.M.GetRPY(roll, pitch, yaw);
-      q_orig.setRPY(roll, pitch, yaw);
-      q_offset.setRPY(
-        camera_offset.roll.radian(), camera_offset.pitch.radian(), camera_offset.yaw.radian());
-      q_result = q_offset * q_orig;
-      q_result.normalize();
-
-      tf_transform.transform.rotation.x = q_result.x();
-      tf_transform.transform.rotation.y = q_result.y();
-      tf_transform.transform.rotation.z = q_result.z();
-      tf_transform.transform.rotation.w = q_result.w();
     } else {
       frame.M.GetQuaternion(
         tf_transform.transform.rotation.x, tf_transform.transform.rotation.y,

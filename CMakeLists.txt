@@ -14,7 +14,6 @@ find_package(kdl_parser REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tachimawari_interfaces REQUIRED)
 find_package(kansei_interfaces REQUIRED)
-find_package(robot_frames_interfaces REQUIRED)
 find_package(keisan REQUIRED)
 find_package(jitsuyo REQUIRED)
 
@@ -36,7 +35,6 @@ ament_target_dependencies(${PROJECT_NAME}
   geometry_msgs
   tachimawari_interfaces
   kansei_interfaces
-  robot_frames_interfaces
   keisan
   jitsuyo)
 
@@ -79,7 +77,6 @@ ament_export_dependencies(
   geometry_msgs
   tachimawari_interfaces
   kansei_interfaces
-  robot_frames_interfaces
   keisan
   jitsuyo
 )

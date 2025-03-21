@@ -11,12 +11,9 @@ using namespace keisan::literals;
 namespace robot_frames
 {
 
-RobotWrapper::RobotWrapper(
-  const std::string & urdf_path, const std::string & camera_offset_path,
-  const std::string & walk_posture_path)
+RobotWrapper::RobotWrapper(const std::string & urdf_path, const std::string & walk_posture_path)
 {
   load_urdf(urdf_path);
-  load_camera_offset(camera_offset_path);
   load_walk_posture(walk_posture_path);
 
   update_orientation(0.0_deg, 0.0_deg, 0.0_deg);
@@ -60,34 +57,6 @@ void RobotWrapper::load_urdf(const std::string & urdf_path)
   joints.clear();
   fixed_joints.clear();
   add_joint(model, tree.getRootSegment());
-}
-
-void RobotWrapper::load_camera_offset(const std::string & camera_offset_path)
-{
-  nlohmann::json config;
-
-  if (!jitsuyo::load_config(camera_offset_path, "camera_offset.json", config)) {
-    throw std::runtime_error("Failed to load config file `camera_offset.json`");
-  }
-
-  double roll_double;
-  double pitch_double;
-  double yaw_double;
-
-  bool valid_config = jitsuyo::assign_val(config, "x", camera_offset.position.x);
-  valid_config &= jitsuyo::assign_val(config, "y", camera_offset.position.y);
-  valid_config &= jitsuyo::assign_val(config, "z", camera_offset.position.z);
-  valid_config &= jitsuyo::assign_val(config, "roll", roll_double);
-  valid_config &= jitsuyo::assign_val(config, "pitch", pitch_double);
-  valid_config &= jitsuyo::assign_val(config, "yaw", yaw_double);
-
-  camera_offset.roll = keisan::make_degree(roll_double);
-  camera_offset.pitch = keisan::make_degree(pitch_double);
-  camera_offset.yaw = keisan::make_degree(yaw_double);
-
-  if (!valid_config) {
-    throw std::runtime_error("Failed to load config file `camera_offset.json`");
-  }
 }
 
 void RobotWrapper::load_walk_posture(const std::string & walk_posture_path)
@@ -187,31 +156,6 @@ void RobotWrapper::update_joint_position(
       }
     }
   }
-}
-
-void RobotWrapper::set_camera_offset(
-  double x, double y, double z, double roll, double pitch, double yaw)
-{
-  camera_offset.position.x = x;
-  camera_offset.position.y = y;
-  camera_offset.position.z = z;
-  camera_offset.roll = keisan::make_degree(roll);
-  camera_offset.pitch = keisan::make_degree(pitch);
-  camera_offset.yaw = keisan::make_degree(yaw);
-}
-
-void RobotWrapper::save_camera_offset()
-{
-  nlohmann::json config;
-
-  config["x"] = camera_offset.position.x;
-  config["y"] = camera_offset.position.y;
-  config["z"] = camera_offset.position.z;
-  config["roll"] = camera_offset.roll.degree();
-  config["pitch"] = camera_offset.pitch.degree();
-  config["yaw"] = camera_offset.yaw.degree();
-
-  jitsuyo::save_config(camera_offset_path, "camera_offset.json", config);
 }
 
 void RobotWrapper::update_orientation(

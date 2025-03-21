@@ -12,8 +12,6 @@
 
 #include "kansei_interfaces/msg/status.hpp"
 #include "robot_frames/model/robot_wrapper.hpp"
-#include "robot_frames_interfaces/srv/get_camera_offset.hpp"
-#include "robot_frames_interfaces/srv/update_camera_offset.hpp"
 #include "tachimawari_interfaces/msg/current_joints.hpp"
 
 namespace robot_frames
@@ -24,12 +22,10 @@ public:
   using CurrentJoints = tachimawari_interfaces::msg::CurrentJoints;
   using KanseiStatus = kansei_interfaces::msg::Status;
   using TransformStamped = geometry_msgs::msg::TransformStamped;
-  using GetCameraOffset = robot_frames_interfaces::srv::GetCameraOffset;
-  using UpdateCameraOffset = robot_frames_interfaces::srv::UpdateCameraOffset;
 
   RobotFramesNode(
     const rclcpp::Node::SharedPtr & node, const std::string & urdf_path,
-    const std::string & camera_offset_path, const std::string & walk_posture_path);
+    const std::string & walk_posture_path);
 
   void publish_frames();
   void publish_static_frames();
@@ -44,9 +40,6 @@ private:
   rclcpp::Subscription<CurrentJoints>::SharedPtr current_joints_subscriber;
 
   rclcpp::Subscription<KanseiStatus>::SharedPtr kansei_status_subscriber;
-
-  rclcpp::Service<GetCameraOffset>::SharedPtr get_camera_offset_service;
-  rclcpp::Service<UpdateCameraOffset>::SharedPtr update_camera_offset_service;
 
   std::shared_ptr<RobotWrapper> robot_wrapper;
 };

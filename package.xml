@@ -16,7 +16,6 @@
   <depend>geometry_msgs</depend>
   <depend>kansei_interfaces</depend>
   <depend>tachimawari_interfaces</depend>
-  <depend>robot_frames_interfaces</depend>
   <depend>keisan</depend>
   <depend>jitsuyo</depend>
 
