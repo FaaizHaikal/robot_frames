@@ -161,9 +161,9 @@ void RobotWrapper::update_joint_position(
 void RobotWrapper::update_orientation(
   keisan::Angle<double> roll, keisan::Angle<double> pitch, keisan::Angle<double> yaw)
 {
-  pitch += hip_pitch_offset;
+  pitch -= hip_pitch_offset;
 
-  KDL::Rotation rotation = KDL::Rotation::RPY(roll.radian(), pitch.radian(), yaw.radian());
+  KDL::Rotation rotation = KDL::Rotation::RPY(roll.radian(), -pitch.radian(), -yaw.radian());
 
   double x, y, z, w;
   rotation.GetQuaternion(x, y, z, w);

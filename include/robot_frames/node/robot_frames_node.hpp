@@ -10,6 +10,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <string>
 
+#include "aruku_interfaces/msg/status.hpp"
 #include "kansei_interfaces/msg/status.hpp"
 #include "robot_frames/model/robot_wrapper.hpp"
 #include "tachimawari_interfaces/msg/current_joints.hpp"
@@ -21,6 +22,7 @@ class RobotFramesNode
 public:
   using CurrentJoints = tachimawari_interfaces::msg::CurrentJoints;
   using KanseiStatus = kansei_interfaces::msg::Status;
+  using ArukuStatus = aruku_interfaces::msg::Status;
   using TransformStamped = geometry_msgs::msg::TransformStamped;
 
   RobotFramesNode(
@@ -40,6 +42,8 @@ private:
   rclcpp::Subscription<CurrentJoints>::SharedPtr current_joints_subscriber;
 
   rclcpp::Subscription<KanseiStatus>::SharedPtr kansei_status_subscriber;
+
+  rclcpp::Subscription<ArukuStatus>::SharedPtr aruku_status_subscriber;
 
   std::shared_ptr<RobotWrapper> robot_wrapper;
 };

@@ -32,6 +32,12 @@ RobotFramesNode::RobotFramesNode(
       this->robot_wrapper->update_orientation(roll, pitch, yaw);
     });
 
+  aruku_status_subscriber = node->create_subscription<ArukuStatus>(
+    "walking/status", 10, [this](const ArukuStatus::SharedPtr msg) {
+      this->robot_wrapper->robot_position.x = (msg->odometry.x - 450.0) / 100.0;
+      this->robot_wrapper->robot_position.y = (msg->odometry.y - 300.0) / 100.0;
+    });
+
   publish_static_frames();
 
   node_timer = node->create_wall_timer(8ms, [this]() { publish_frames(); });
@@ -62,6 +68,9 @@ void RobotFramesNode::publish_frames()
 
     if (joint_name == "body_joint") {
       auto orientation = robot_wrapper->get_orientation();
+
+      tf_transform.transform.translation.x = robot_wrapper->robot_position.x;
+      tf_transform.transform.translation.y = robot_wrapper->robot_position.y;
 
       tf_transform.transform.rotation.x = orientation.x;
       tf_transform.transform.rotation.y = orientation.y;

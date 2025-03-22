@@ -92,6 +92,8 @@ public:
   const JointMap & get_fixed_joints() const { return fixed_joints; }
   const Orientation & get_orientation() const { return orientation; }
 
+  keisan::Point2 robot_position;
+
 private:
   JointMap joints;
   JointMap fixed_joints;
