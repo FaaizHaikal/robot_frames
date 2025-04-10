@@ -2,13 +2,13 @@
 
 int main(int argc, char ** argv)
 {
-  if (argc < 4) {
+  if (argc < 3) {
     std::cerr << "Usage: ros2 run robot_frames <urdf_path> <walk_posture_path>" << std::endl;
     return 1;
   }
 
   std::string urdf_path = argv[1];
-  std::string walk_posture_path = argv[3];
+  std::string walk_posture_path = argv[2];
 
   rclcpp::init(argc, argv);
 
