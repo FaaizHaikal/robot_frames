@@ -21,6 +21,7 @@ RobotFramesNode::RobotFramesNode(
         this->robot_wrapper->update_joint_position(
           this->robot_wrapper->joint_names.at(joint.id), keisan::make_degree(joint.position));
       }
+      this->robot_wrapper->update_base_footprint();
     });
 
   kansei_status_subscriber = node->create_subscription<KanseiStatus>(
@@ -72,10 +73,9 @@ void RobotFramesNode::publish_frames()
       tf_transform.transform.translation.x = robot_wrapper->robot_position.x;
       tf_transform.transform.translation.y = robot_wrapper->robot_position.y;
 
-      tf_transform.transform.rotation.x = orientation.x;
-      tf_transform.transform.rotation.y = orientation.y;
-      tf_transform.transform.rotation.z = orientation.z;
-      tf_transform.transform.rotation.w = orientation.w;
+      orientation.GetQuaternion(
+        tf_transform.transform.rotation.x, tf_transform.transform.rotation.y,
+        tf_transform.transform.rotation.z, tf_transform.transform.rotation.w);
     } else {
       frame.M.GetQuaternion(
         tf_transform.transform.rotation.x, tf_transform.transform.rotation.y,
@@ -84,6 +84,24 @@ void RobotFramesNode::publish_frames()
 
     tf_transforms.push_back(tf_transform);
   }
+
+  // Add base footprint frame
+  TransformStamped tf_transform;
+  tf_transform.header.stamp = node->now();
+  tf_transform.header.frame_id = "body";
+  tf_transform.child_frame_id = "base_footprint";
+
+  auto frame = robot_wrapper->get_base_footprint();
+  tf_transform.transform.translation.x = frame.p.x();
+  tf_transform.transform.translation.x = frame.p.x();
+  tf_transform.transform.translation.y = frame.p.y();
+  tf_transform.transform.translation.z = frame.p.z();
+
+  frame.M.GetQuaternion(
+    tf_transform.transform.rotation.x, tf_transform.transform.rotation.y,
+    tf_transform.transform.rotation.z, tf_transform.transform.rotation.w);
+
+  tf_transforms.push_back(tf_transform);
 
   tf_broadcaster->sendTransform(tf_transforms);
 }

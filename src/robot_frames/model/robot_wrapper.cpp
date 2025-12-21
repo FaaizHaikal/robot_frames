@@ -120,9 +120,7 @@ void RobotWrapper::add_joint(
 
   for (unsigned int i = 0; i < children.size(); i++) {
     const KDL::Segment & child = children[i]->second.segment;
-
     const std::string & child_name = children[i]->second.segment.getName();
-
     const std::string & joint_name = children[i]->second.segment.getJoint().getName();
 
     Joint joint(child, root_name, child_name);
@@ -158,20 +156,55 @@ void RobotWrapper::update_joint_position(
   }
 }
 
+KDL::Frame RobotWrapper::get_frame_to_root(const std::string & target, const std::string & root)
+{
+  KDL::Frame T = KDL::Frame::Identity();
+  std::string current = target;
+
+  while (current != root) {
+    auto it = std::find_if(joints.begin(), joints.end(), [&](const auto & pair) {
+      return pair.second.child == current;
+    });
+
+    if (it == joints.end()) {
+      throw std::runtime_error("No joint connects to " + current);
+    }
+
+    const Joint & joint = it->second;
+    T = joint.segment.pose(joint.position) * T;
+    current = joint.parent;
+  }
+
+  return T;
+}
+
+void RobotWrapper::update_base_footprint()
+{
+  KDL::Frame r_frame = get_frame_to_root("right_foot_frame", "body");
+  KDL::Frame l_frame = get_frame_to_root("left_foot_frame", "body");
+
+  // determine support and swing foot
+  auto support_frame = l_frame;
+  auto swing_frame = r_frame;
+  if (r_frame.p.z() < l_frame.p.z()) {
+    support_frame = r_frame;
+    swing_frame = l_frame;
+  }
+
+  base_footprint.p.data[0] = (support_frame.p.x() + swing_frame.p.x()) / 2;
+  base_footprint.p.data[1] = (support_frame.p.y() + swing_frame.p.y()) / 2;
+  base_footprint.p.data[2] = support_frame.p.z();
+
+  double roll, pitch, yaw;
+  orientation.GetRPY(roll, pitch, yaw);
+  base_footprint.M.DoRotZ(yaw);
+}
+
 void RobotWrapper::update_orientation(
   keisan::Angle<double> roll, keisan::Angle<double> pitch, keisan::Angle<double> yaw)
 {
   pitch -= hip_pitch_offset;
-
-  KDL::Rotation rotation = KDL::Rotation::RPY(roll.radian(), -pitch.radian(), -yaw.radian());
-
-  double x, y, z, w;
-  rotation.GetQuaternion(x, y, z, w);
-
-  orientation.x = x;
-  orientation.y = y;
-  orientation.z = z;
-  orientation.w = w;
+  orientation = KDL::Rotation::RPY(roll.radian(), -pitch.radian(), -yaw.radian());
 }
 
 }  // namespace robot_frames

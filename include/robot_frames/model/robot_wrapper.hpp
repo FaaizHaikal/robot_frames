@@ -44,14 +44,6 @@ public:
     }
   };
 
-  struct Orientation
-  {
-    double x;
-    double y;
-    double z;
-    double w;
-  };
-
   using JointMap = std::map<std::string, Joint>;
   using MimicJointMap = std::map<std::string, MimicJoint>;
 
@@ -85,20 +77,25 @@ public:
 
   void add_joint(const urdf::Model & model, const KDL::SegmentMap::const_iterator segment);
   void update_joint_position(const std::string & name, keisan::Angle<double> position);
+  void update_base_footprint();
   void update_orientation(
     keisan::Angle<double> roll, keisan::Angle<double> pitch, keisan::Angle<double> yaw);
 
+  KDL::Frame get_frame_to_root(const std::string & target, const std::string & root);
+
   const JointMap & get_joints() const { return joints; }
   const JointMap & get_fixed_joints() const { return fixed_joints; }
-  const Orientation & get_orientation() const { return orientation; }
+  const KDL::Rotation & get_orientation() const { return orientation; }
+  const KDL::Frame & get_base_footprint() const { return base_footprint; }
 
   keisan::Point2 robot_position;
 
 private:
   JointMap joints;
   JointMap fixed_joints;
+  KDL::Frame base_footprint;
   MimicJointMap mimic_joints;
-  Orientation orientation;
+  KDL::Rotation orientation;
 
   std::string camera_offset_path;
 

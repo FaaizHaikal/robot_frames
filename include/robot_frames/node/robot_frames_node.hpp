@@ -30,6 +30,7 @@ public:
     const std::string & walk_posture_path);
 
   void publish_frames();
+  void calculate_base_footprint(std::vector<TransformStamped> & tf_transforms);
   void publish_static_frames();
 
 private:
