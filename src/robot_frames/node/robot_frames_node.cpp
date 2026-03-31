@@ -18,6 +18,12 @@ RobotFramesNode::RobotFramesNode(
   current_joints_subscriber = node->create_subscription<CurrentJoints>(
     "joint/current_joints", 10, [this](const CurrentJoints::SharedPtr msg) {
       for (const auto & joint : msg->joints) {
+        if (
+          this->robot_wrapper->joint_names.find(joint.id) ==
+          this->robot_wrapper->joint_names.end()) {
+          continue;  // Skip this joint and move to the next
+        }
+
         this->robot_wrapper->update_joint_position(
           this->robot_wrapper->joint_names.at(joint.id), keisan::make_degree(joint.position));
       }

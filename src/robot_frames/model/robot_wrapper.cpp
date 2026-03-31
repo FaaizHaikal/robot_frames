@@ -197,7 +197,7 @@ void RobotWrapper::update_base_footprint()
 
   double roll, pitch, yaw;
   orientation.GetRPY(roll, pitch, yaw);
-  base_footprint.M.DoRotZ(yaw);
+  base_footprint.M = KDL::Rotation::RotZ(yaw);
 }
 
 void RobotWrapper::update_orientation(
