@@ -99,11 +99,22 @@ void RobotFramesNode::publish_frames()
 
   auto frame = robot_wrapper->get_base_footprint();
   tf_transform.transform.translation.x = frame.p.x();
-  tf_transform.transform.translation.x = frame.p.x();
   tf_transform.transform.translation.y = frame.p.y();
   tf_transform.transform.translation.z = frame.p.z();
 
-  frame.M.GetQuaternion(
+  auto body_orientation = robot_wrapper->get_orientation();
+
+  double roll, pitch, yaw;
+  body_orientation.GetRPY(roll, pitch, yaw);
+
+  // Build yaw-only in world frame
+  KDL::Rotation R_yaw = KDL::Rotation::RotZ(yaw);
+
+  // Convert to body-relative rotation
+  KDL::Rotation R_relative = body_orientation.Inverse() * R_yaw;
+
+  // Apply this rotation to base_footprint
+  R_relative.GetQuaternion(
     tf_transform.transform.rotation.x, tf_transform.transform.rotation.y,
     tf_transform.transform.rotation.z, tf_transform.transform.rotation.w);
 
