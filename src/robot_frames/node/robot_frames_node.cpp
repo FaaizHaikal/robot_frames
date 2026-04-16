@@ -39,8 +39,8 @@ RobotFramesNode::RobotFramesNode(
       this->robot_wrapper->update_orientation(roll, pitch, yaw);
     });
 
-  aruku_status_subscriber = node->create_subscription<ArukuStatus>(
-    "walking/status", 10, [this](const ArukuStatus::SharedPtr msg) {
+  gankenkun_status_subscriber = node->create_subscription<GankenkunStatus>(
+    "walking/status", 10, [this](const GankenkunStatus::SharedPtr msg) {
       this->robot_wrapper->robot_position.x = (msg->odometry.x - 450.0) / 100.0;
       this->robot_wrapper->robot_position.y = (msg->odometry.y - 300.0) / 100.0;
     });

@@ -13,7 +13,7 @@ find_package(urdf REQUIRED)
 find_package(kdl_parser REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tachimawari_interfaces REQUIRED)
-find_package(aruku_interfaces REQUIRED)
+find_package(gankenkun_interfaces REQUIRED)
 find_package(kansei_interfaces REQUIRED)
 find_package(keisan REQUIRED)
 find_package(jitsuyo REQUIRED)
@@ -35,7 +35,7 @@ ament_target_dependencies(${PROJECT_NAME}
   kdl_parser
   geometry_msgs
   tachimawari_interfaces
-  aruku_interfaces
+  gankenkun_interfaces
   kansei_interfaces
   keisan
   jitsuyo)
@@ -78,7 +78,7 @@ ament_export_dependencies(
   kdl_parser
   geometry_msgs
   tachimawari_interfaces
-  aruku_interfaces
+  gankenkun_interfaces
   kansei_interfaces
   keisan
   jitsuyo
